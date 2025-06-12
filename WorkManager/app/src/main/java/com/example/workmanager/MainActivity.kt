@@ -28,8 +28,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import coil3.compose.rememberAsyncImagePainter
@@ -68,9 +70,21 @@ class MainActivity : ComponentActivity() {
                     workInfos?.find { it.id == colorFilter.id }
                 }
                 val imageUri by derivedStateOf {
-                    val downloadUri = downloadInfo?.outputData?.getString(WorkerKeys.IMAGE_URI)?.toUri()
-                    val filterUri = filterInfo?.outputData?.getString(WorkerKeys.FILTER_URI)?.toUri()
+                    val downloadUri =
+                        downloadInfo?.outputData?.getString(WorkerKeys.IMAGE_URI)?.toUri()
+                    val filterUri =
+                        filterInfo?.outputData?.getString(WorkerKeys.FILTER_URI)?.toUri()
                     filterUri ?: downloadUri
+                }
+                // Определяем текущее состояние
+                val currentState by derivedStateOf {
+                    when {
+                        workInfos.isNullOrEmpty() -> "Ready to start"
+                        workInfos.any { it.state == WorkInfo.State.RUNNING } -> "Processing..."
+                        workInfos.any { it.state == WorkInfo.State.FAILED } -> "Error occurred"
+                        workInfos.all { it.state == WorkInfo.State.SUCCEEDED } -> "Completed!"
+                        else -> "Pending..."
+                    }
                 }
                 Column(
                     modifier = Modifier
@@ -79,13 +93,47 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     imageUri?.let { image ->
-                        Image(painter = rememberAsyncImagePainter(imageUri),
+                        Image(
+                            painter = rememberAsyncImagePainter(imageUri),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
                         )
                         Spacer(Modifier.height(16.dp))
-                        Button() { }
+                    }
+                    Button(
+                        onClick = {
+                            workManager.beginUniqueWork(
+                                "download",
+                                ExistingWorkPolicy.KEEP,
+                                downloadRequest
+                            )
+                                .then(colorFilter)
+                                .enqueue()
+                        },
+                        enabled = downloadInfo?.state != WorkInfo.State.RUNNING
+                    ) {
+                        Text("Start download")
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    when (downloadInfo?.state) {
+                        WorkInfo.State.RUNNING -> Text("Downloading...")
+                        WorkInfo.State.FAILED -> Text("Error")
+                        WorkInfo.State.CANCELLED -> Text("Cancelled")
+                        WorkInfo.State.SUCCEEDED -> Text("Downloaded")
+                        WorkInfo.State.ENQUEUED -> Text("enqueued")
+                        WorkInfo.State.BLOCKED -> Text("Blocked")
+                        null -> Text("null")
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    when (filterInfo?.state) {
+                        WorkInfo.State.RUNNING -> Text("Applying filter...")
+                        WorkInfo.State.FAILED -> Text("Error")
+                        WorkInfo.State.CANCELLED -> Text("Cancelled")
+                        WorkInfo.State.SUCCEEDED -> Text("Applied")
+                        WorkInfo.State.ENQUEUED -> Text("enqueued")
+                        WorkInfo.State.BLOCKED -> Text("Blocked")
+                        null -> Text("null")
                     }
                 }
             }

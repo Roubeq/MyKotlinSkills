@@ -31,10 +31,9 @@ class ColorFilterWorker(
         delay(5000L)
         return imageFile?.let { file ->
             val bmp = BitmapFactory.decodeFile(file.absolutePath)
-            val bmpConfig = Bitmap.Config.ALPHA_8
 
             val resultImage = bmp.copy(
-                bmpConfig,
+                bmp.config!!,
                 true
             )
             val paint = Paint()

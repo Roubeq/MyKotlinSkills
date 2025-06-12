@@ -1,6 +1,7 @@
 package com.example.workmanager
 
 import android.content.Context
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.work.CoroutineWorker
@@ -23,6 +24,7 @@ class DownloadWorker(
     workerParams
 ) {
     override suspend fun doWork(): Result {
+        Log.d("DownloadWorker","Началась загрузка")
         showNotification()
         delay(5000L)
         val response = FileApi.instance.getDownloadPhoto()
