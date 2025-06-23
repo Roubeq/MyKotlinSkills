@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.snackbars"
+    namespace = "com.example.daggerhilt"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.snackbars"
+        applicationId = "com.example.daggerhilt"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -56,7 +56,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-    // Navigation Compose
-    implementation()
 }
